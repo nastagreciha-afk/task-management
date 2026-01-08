@@ -8,6 +8,7 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -34,10 +35,15 @@ class AuthController extends Controller
                 ],
             ], 201);
         } catch (\Exception $e) {
+            Log::error('Registration failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Registration failed',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred during registration',
             ], 500);
         }
     }
@@ -66,10 +72,15 @@ class AuthController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
+            Log::error('Login failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Login failed',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred during login',
             ], 500);
         }
     }
@@ -87,10 +98,15 @@ class AuthController extends Controller
                 'message' => 'Logout successful',
             ]);
         } catch (\Exception $e) {
+            Log::error('Logout failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Logout failed',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred during logout',
             ], 500);
         }
     }

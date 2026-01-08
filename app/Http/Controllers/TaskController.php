@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Services\TaskService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -32,10 +33,15 @@ class TaskController extends Controller
                 'data' => $tasks,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch tasks', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch tasks',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -57,10 +63,15 @@ class TaskController extends Controller
                 'data' => $task,
             ], 201);
         } catch (\Exception $e) {
+            Log::error('Failed to create task', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create task',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -78,10 +89,15 @@ class TaskController extends Controller
                 'data' => $task,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch task', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch task',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -111,10 +127,15 @@ class TaskController extends Controller
                 'data' => $task,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to update task', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update task',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -140,10 +161,15 @@ class TaskController extends Controller
                 'message' => 'Task deleted successfully',
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to delete task', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete task',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }

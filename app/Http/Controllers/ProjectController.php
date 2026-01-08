@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Services\ProjectService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ProjectController extends Controller
 {
@@ -32,10 +33,15 @@ class ProjectController extends Controller
                 'data' => $projects,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch projects', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch projects',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -57,10 +63,15 @@ class ProjectController extends Controller
                 'data' => $project,
             ], 201);
         } catch (\Exception $e) {
+            Log::error('Failed to create project', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create project',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -78,10 +89,15 @@ class ProjectController extends Controller
                 'data' => $project,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch project', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch project',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -111,10 +127,15 @@ class ProjectController extends Controller
                 'data' => $project,
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to update project', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update project',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -140,10 +161,15 @@ class ProjectController extends Controller
                 'message' => 'Project deleted successfully',
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to delete project', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete project',
-                'error' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
