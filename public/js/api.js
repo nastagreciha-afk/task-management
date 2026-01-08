@@ -47,16 +47,21 @@ async function apiRequest(endpoint, options = {}) {
     }
     
     try {
+        console.log('API Request:', { url, method: config.method || 'GET', hasToken: !!token });
         const response = await fetch(url, config);
+        
+        console.log('API Response:', { status: response.status, statusText: response.statusText, url });
         
         // Handle non-JSON responses
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
             const text = await response.text();
-            throw new Error(text || 'An error occurred');
+            console.error('Non-JSON response:', text);
+            throw new Error(text || 'Server returned non-JSON response');
         }
         
         const data = await response.json();
+        console.log('API Response data:', data);
         
         if (!response.ok) {
             // Handle validation errors
@@ -65,16 +70,19 @@ async function apiRequest(endpoint, options = {}) {
                 throw new Error(errors || data.message || 'Validation failed');
             }
             
-            // Handle unauthorized
+            // Handle unauthorized - but don't redirect if we're already on login page
             if (response.status === 401) {
                 removeToken();
                 localStorage.removeItem('user');
-                if (window.location.pathname !== '/login.html') {
+                // Only redirect if not already on login page
+                if (window.location.pathname !== '/login.html' && !window.location.pathname.includes('login')) {
                     window.location.href = '/login.html';
                 }
+                // Still throw error so form handler can show message
+                throw new Error(data.message || 'Invalid credentials');
             }
             
-            throw new Error(data.message || data.error || 'An error occurred');
+            throw new Error(data.message || data.error || `Server error: ${response.status}`);
         }
         
         return data;

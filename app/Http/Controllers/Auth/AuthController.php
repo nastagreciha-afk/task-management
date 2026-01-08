@@ -54,13 +54,37 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->login($request->validated());
+            $validated = $request->validated();
+            
+            Log::info('Login request received', [
+                'email' => $validated['email'] ?? null,
+                'has_password' => isset($validated['password']),
+            ]);
+            
+            $result = $this->authService->login($validated);
+            
+            Log::info('Login service result', [
+                'success' => $result['success'] ?? false,
+                'has_token' => isset($result['token']),
+                'has_user' => isset($result['user']),
+            ]);
 
             if (! $result['success']) {
                 return response()->json([
                     'success' => false,
-                    'message' => $result['message'],
+                    'message' => $result['message'] ?? 'Invalid credentials',
                 ], 401);
+            }
+
+            if (! isset($result['token']) || empty($result['token'])) {
+                Log::error('Login successful but no token generated', [
+                    'user_id' => $result['user']->id ?? null,
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to generate authentication token',
+                ], 500);
             }
 
             return response()->json([
@@ -72,9 +96,11 @@ class AuthController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Login failed', [
+            Log::error('Login controller exception', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
             
             return response()->json([

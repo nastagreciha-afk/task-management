@@ -19,7 +19,7 @@ class AuthService
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),
+                'password' => $data['password'],
             ]);
 
             Log::info('User registered successfully', ['user_id' => $user->id]);
@@ -44,11 +44,39 @@ class AuthService
     public function login(array $credentials): array
     {
         try {
-            $user = User::where('email', $credentials['email'])->first();
+            $email = $credentials['email'] ?? null;
 
-            if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-                Log::warning('Login attempt failed', ['email' => $credentials['email']]);
+            Log::info('Login attempt', ['email' => $email]);
 
+            if (! $email) {
+                Log::warning('Login attempt with empty email');
+                return [
+                    'success' => false,
+                    'message' => 'Email is required',
+                ];
+            }
+
+            $user = User::where('email', $email)->first();
+
+            if (! $user) {
+                Log::warning('Login attempt failed - user not found', ['email' => $email]);
+                return [
+                    'success' => false,
+                    'message' => 'Invalid credentials',
+                ];
+            }
+
+            $passwordProvided = $credentials['password'] ?? null;
+            if (! $passwordProvided) {
+                Log::warning('Login attempt failed - no password provided', ['email' => $email]);
+                return [
+                    'success' => false,
+                    'message' => 'Password is required',
+                ];
+            }
+
+            if (! Hash::check($passwordProvided, $user->password)) {
+                Log::warning('Login attempt failed - invalid password', ['email' => $email, 'user_id' => $user->id]);
                 return [
                     'success' => false,
                     'message' => 'Invalid credentials',
@@ -57,16 +85,21 @@ class AuthService
 
             $token = $user->createToken('auth-token')->plainTextToken;
 
-            Log::info('User logged in successfully', ['user_id' => $user->id]);
+            Log::info('User logged in successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'has_token' => ! empty($token),
+            ]);
 
             return [
                 'success' => true,
                 'token' => $token,
-                'user' => $user,
+                'user' => $user->makeHidden(['password', 'remember_token']),
             ];
         } catch (\Exception $e) {
-            Log::error('Login failed', [
+            Log::error('Login exception', [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'email' => $credentials['email'] ?? null,
             ]);
 

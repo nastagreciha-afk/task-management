@@ -1,35 +1,86 @@
 // Check if user is already logged in
 window.addEventListener('DOMContentLoaded', () => {
+    console.log('Auth script loaded');
     const token = getToken();
-    if (token && window.location.pathname === '/login.html') {
+    if (token && (window.location.pathname === '/login.html' || window.location.pathname === '/login')) {
         window.location.href = '/index.html';
-    } else if (!token && window.location.pathname !== '/login.html') {
-        window.location.href = '/login.html';
+    } else if (!token && window.location.pathname !== '/login.html' && window.location.pathname !== '/login') {
+        // Don't redirect if we're on root or index
+        if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+            window.location.href = '/login.html';
+        }
+    }
+    
+    // Check if form exists
+    const loginForm = document.getElementById('loginForm');
+    if (!loginForm) {
+        console.error('Login form not found!');
     }
 });
 
 // Login form handler
-document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearErrors();
     
-    const email = document.getElementById('email').value;
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     
+    if (!email || !password) {
+        showNotification('Please fill in all fields', 'error');
+        return;
+    }
+    
+    // Disable submit button
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in...';
+    
     try {
+        console.log('Attempting login for:', email);
         const response = await authAPI.login({ email, password });
+        console.log('Login response:', response);
         
-        if (response.success) {
-            setToken(response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            showNotification('Login successful!', 'success');
-            setTimeout(() => {
-                window.location.href = '/index.html';
-            }, 1000);
+        if (response && response.success) {
+            if (response.data && response.data.token) {
+                const token = response.data.token;
+                const user = response.data.user;
+                
+                console.log('Token received:', token ? 'Token exists (' + token.length + ' chars)' : 'No token');
+                console.log('User data:', user);
+                
+                // Save token
+                setToken(token);
+                const savedToken = getToken();
+                console.log('Token saved:', savedToken ? 'Yes' : 'No');
+                
+                // Save user
+                if (user) {
+                    localStorage.setItem('user', JSON.stringify(user));
+                    console.log('User saved:', JSON.parse(localStorage.getItem('user') || '{}'));
+                }
+                
+                showNotification('Login successful!', 'success');
+                
+                // Small delay to show notification
+                setTimeout(() => {
+                    console.log('Redirecting to dashboard...');
+                    window.location.href = '/index.html';
+                }, 1000);
+            } else {
+                console.error('Invalid response structure:', response);
+                showNotification('Invalid response from server: missing token or user data', 'error');
+            }
         } else {
-            showNotification(response.message || 'Login failed', 'error');
+            console.error('Login failed:', response);
+            showNotification(response?.message || 'Login failed', 'error');
         }
     } catch (error) {
+        console.error('Login error:', error);
+        
         // Handle validation errors
         if (error.message && error.message.includes(',')) {
             const errors = error.message.split(', ');
@@ -41,12 +92,23 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
                 }
             });
         }
-        showNotification(error.message || 'Login failed', 'error');
+        
+        const errorMessage = error.message || 'Login failed. Please check your credentials.';
+        showNotification(errorMessage, 'error');
+    } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
     }
-});
+    });
+} else {
+    console.error('Login form not found on page');
+}
 
 // Register form handler
-document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+const registerForm = document.getElementById('registerForm');
+if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearErrors();
     
@@ -98,7 +160,10 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
         }
         showNotification(error.message || 'Registration failed', 'error');
     }
-});
+    });
+} else {
+    console.warn('Register form not found on page');
+}
 
 // Toggle between login and register forms
 document.getElementById('registerLink')?.addEventListener('click', (e) => {
