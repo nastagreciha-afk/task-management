@@ -41,17 +41,50 @@ async function apiRequest(endpoint, options = {}) {
         },
     };
     
+    // If body is provided in options, convert it to string if it's an object
+    if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+        config.body = JSON.stringify(options.body);
+    }
+    
     try {
         const response = await fetch(url, config);
+        
+        // Handle non-JSON responses
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(text || 'An error occurred');
+        }
+        
         const data = await response.json();
         
         if (!response.ok) {
-            throw new Error(data.message || 'An error occurred');
+            // Handle validation errors
+            if (response.status === 422 && data.errors) {
+                const errors = Object.values(data.errors).flat().join(', ');
+                throw new Error(errors || data.message || 'Validation failed');
+            }
+            
+            // Handle unauthorized
+            if (response.status === 401) {
+                removeToken();
+                localStorage.removeItem('user');
+                if (window.location.pathname !== '/login.html') {
+                    window.location.href = '/login.html';
+                }
+            }
+            
+            throw new Error(data.message || data.error || 'An error occurred');
         }
         
         return data;
     } catch (error) {
-        throw error;
+        // If it's already an Error object, just throw it
+        if (error instanceof Error) {
+            throw error;
+        }
+        // Otherwise, wrap it in an Error
+        throw new Error(error.message || 'An error occurred');
     }
 }
 
@@ -60,14 +93,14 @@ const authAPI = {
     register: async (userData) => {
         return apiRequest('/register', {
             method: 'POST',
-            body: JSON.stringify(userData),
+            body: userData,
         });
     },
     
     login: async (credentials) => {
         return apiRequest('/login', {
             method: 'POST',
-            body: JSON.stringify(credentials),
+            body: credentials,
         });
     },
     
@@ -96,14 +129,14 @@ const projectAPI = {
     create: async (projectData) => {
         return apiRequest('/projects', {
             method: 'POST',
-            body: JSON.stringify(projectData),
+            body: projectData,
         });
     },
     
     update: async (id, projectData) => {
         return apiRequest(`/projects/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(projectData),
+            body: projectData,
         });
     },
     
@@ -128,14 +161,14 @@ const taskAPI = {
     create: async (taskData) => {
         return apiRequest('/tasks', {
             method: 'POST',
-            body: JSON.stringify(taskData),
+            body: taskData,
         });
     },
     
     update: async (id, taskData) => {
         return apiRequest(`/tasks/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(taskData),
+            body: taskData,
         });
     },
     

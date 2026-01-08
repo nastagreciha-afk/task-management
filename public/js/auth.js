@@ -30,6 +30,17 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
             showNotification(response.message || 'Login failed', 'error');
         }
     } catch (error) {
+        // Handle validation errors
+        if (error.message && error.message.includes(',')) {
+            const errors = error.message.split(', ');
+            errors.forEach(err => {
+                if (err.toLowerCase().includes('email')) {
+                    showError('emailError', err);
+                } else if (err.toLowerCase().includes('password')) {
+                    showError('passwordError', err);
+                }
+            });
+        }
         showNotification(error.message || 'Login failed', 'error');
     }
 });
@@ -68,6 +79,23 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
             showNotification(response.message || 'Registration failed', 'error');
         }
     } catch (error) {
+        // Handle validation errors
+        if (error.message && error.message.includes(',')) {
+            const errors = error.message.split(', ');
+            errors.forEach(err => {
+                if (err.toLowerCase().includes('name')) {
+                    showError('regNameError', err);
+                } else if (err.toLowerCase().includes('email')) {
+                    showError('regEmailError', err);
+                } else if (err.toLowerCase().includes('password')) {
+                    if (err.toLowerCase().includes('confirmation')) {
+                        showError('regPasswordConfirmError', err);
+                    } else {
+                        showError('regPasswordError', err);
+                    }
+                }
+            });
+        }
         showNotification(error.message || 'Registration failed', 'error');
     }
 });

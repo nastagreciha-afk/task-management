@@ -212,7 +212,9 @@ function setupEventListeners() {
             document.getElementById('projectModal').style.display = 'none';
             await loadProjects();
         } catch (error) {
-            showNotification('Failed to save project: ' + error.message, 'error');
+            const errorMsg = error.message || 'Failed to save project';
+            showNotification(errorMsg, 'error');
+            console.error('Project save error:', error);
         }
     });
     
@@ -241,7 +243,9 @@ function setupEventListeners() {
             document.getElementById('taskModal').style.display = 'none';
             await loadTasks();
         } catch (error) {
-            showNotification('Failed to save task: ' + error.message, 'error');
+            const errorMsg = error.message || 'Failed to save task';
+            showNotification(errorMsg, 'error');
+            console.error('Task save error:', error);
         }
     });
     
